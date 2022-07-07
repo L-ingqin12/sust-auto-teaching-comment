@@ -1,7 +1,10 @@
+# 自动评教正式版
 from re import findall
 import json
 from requests import *
 import time
+
+depth=0
 
 my_headers = {
     'Referer': 'http://login.sust.edu.cn',
@@ -174,10 +177,13 @@ def packet_callback(teacher_id, lesson_id) -> dict:
 
 
 def get_comment_list_page(cookie) -> None:
+    global depth
     """
     :param cookie:
     :return:
     """
+    depth+=1
+    C=cookie
     response = post(COMMENT_LIST_URL, cookies=cookie)
     COMMENT_LIST = findall(evaluationLessonRegex, response.text)
     cookie['semester.id'] = 162
@@ -206,15 +212,11 @@ def get_comment_list_page(cookie) -> None:
             print('评教成功')
 
         time.sleep(1)
-
-    verify_response = post(COMMENT_LIST_URL, cookies=cookie)
-    verify_LIST = findall(evaluationLessonRegex, response.text)
-    if verify_LIST==0:
-        print('评教结束')
+    if depth<4:
+        get_comment_list_page(C)
     else:
-        print('未评教科目数量:',len(verify_LIST))
-        print("请尝试重新开始评教")
-    return
+        print('评教失败')
+        return
 
 
 def main(user: dict) -> None:
