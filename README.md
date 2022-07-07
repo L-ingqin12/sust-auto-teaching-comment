@@ -14,4 +14,5 @@ password:你的密码
 
 2. 手机验证码登录
 
-<:正在施工中……>
+![image](https://user-images.githubusercontent.com/61613105/177730567-2130a635-e2c6-492d-bc1a-9a514b7ce3fb.png)
+根据提示输入验证码可完成手机验证码登录。
