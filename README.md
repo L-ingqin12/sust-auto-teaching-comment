@@ -2,4 +2,11 @@
 sust自动评教
 
 变更该部分信息即可使用。
+
+```
+name:昵称，可以随便填写
+usr:你的账户，
+password:你的密码
+
+```
 ![image](https://user-images.githubusercontent.com/61613105/177701726-ed92746d-d844-4b7b-8bdf-de73d86e794e.png)
