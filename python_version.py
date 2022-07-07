@@ -14,6 +14,8 @@ HOST = "http://bkjw.sust.edu.cn"
 
 COMMENT_LIST_URL = HOST + "/eams/quality/stdEvaluate.action?_=1609766969972"
 COMMENT_SUBMIT_URL = HOST + "/eams/quality/stdEvaluate!finishAnswer.action"
+
+VERIFY_URL="http://login.sust.edu.cn/cas/passwordlessTokenSend"
 evaluationLessonRegex = "(?<=evaluationLesson.id=).*?(?=\")"
 headers = {
     'Host': 'bkjw.sust.edu.cn',
@@ -39,7 +41,7 @@ def get_xsrf() -> dict:
     return req_xs.cookies.get_dict()
 
 
-def get_cookies(User: dict) -> dict:
+def get_cookies_Bypassword(User: dict) -> dict:
     """
     :param User:
     :return:
@@ -59,6 +61,40 @@ def get_cookies(User: dict) -> dict:
     req_add = post(url=url, data=data, cookies=my_cookies, allow_redirects=False)
     if req_add.status_code == 401:
         print("密码错误")
+        return None
+    else:
+        print("登录成功")
+    header = req_add.headers
+    header[
+        'User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36 Edg/94.0.992.31'
+    response = get(url=req_add.url, headers=header, cookies=req_add.cookies.get_dict(), allow_redirects=True)
+    cookie: dict[str, str] = {}
+    for i in response.request.headers['Cookie'].split(';'):
+        i = list(i.strip().split('='))
+        if i[0] == 'TGC':
+            continue
+        cookie[i[0]] = i[1]
+    return cookie
+
+def get_cookies_ByverifyCode(user)->dict:
+    data={'username':user['phone']}
+    response=post(VERIFY_URL,headers=my_headers,data=data)
+    code=input("请输入验证码:")
+    url = 'http://login.sust.edu.cn/cas/login?service=http%3A%2F%2Fbkjw.sust.edu.cn%3A80%2Feams%2Fsso%2Flogin.action%3FtargetUrl%3Dbase64aHR0cDovL2Jrancuc3VzdC5lZHUuY246ODAvZWFtcy9ob21lLmFjdGlvbg%3D%3D'
+    data = {
+        'username': data['username'],
+        'password': code,
+        'currentMenu': '2',
+        'execution': 'e1s1',
+        '_eventId': 'submitPasswordlessToken',
+        'geolocation': '',
+        'submit': '稍等片刻……'.encode(),
+        # 'execution': get_execution()
+    }
+    my_cookies = get_xsrf()
+    req_add = post(url=url, data=data, cookies=my_cookies, allow_redirects=False)
+    if req_add.status_code == 401:
+        print("验证码错误")
         return None
     else:
         print("登录成功")
@@ -224,19 +260,32 @@ def main(user: dict) -> None:
     :param user:
     :return:
     """
-    Cookie = get_cookies(user)
+    if 'password' in user:
+        Cookie = get_cookies_Bypassword(user)
+    elif 'phone' in user:
+        Cookie = get_cookies_ByverifyCode(user)
+    else:
+        print('格式错误')
+        return
     if Cookie != None:
         # print(Cookie)
         get_comment_list_page(Cookie)
 
 
 if __name__ == '__main__':
-    users = [{
-        'name': 'yourNickName',
-        'user': "youraccount",
-        'password': 'yourpassword'
-    }
-    ]
+    users = [
+#         使用账号密码登录
+            {
+                'name': 'yourNickName',
+                'user': "yourAccount",
+                'password': 'yourPassword'
+            },
+#         使用验证码登录
+            {
+                'name': 'yourNickName',
+                'phone':'yourPhoneNumber' # 此处输入手机号
+            }
+        ]
     for user in users:
         print('用户name:' + user['name'])
         main(user)
